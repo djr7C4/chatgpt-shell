@@ -4,9 +4,9 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/chatgpt-shell
-;; Version: 2.9.1
-;; Package-Requires: ((emacs "28.1") (shell-maker "0.74.1"))
-(defconst chatgpt-shell--version "2.9.1")
+;; Version: 2.10.2
+;; Package-Requires: ((emacs "28.1") (shell-maker "0.76.2"))
+(defconst chatgpt-shell--version "2.10.2")
 
 ;; This package is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 ;; M-x `chatgpt-shell-describe-image'
 ;; M-x `chatgpt-shell-japanese-lookup'
 ;;
-;; You must set an API key for most cloud services. Check out:
+;; You must set an API key for most cloud services.  Check out:
 ;;
 ;;   `chatgpt-shell-openai-key'.
 ;;   `chatgpt-shell-anthropic-key'.
@@ -569,7 +569,7 @@ See `chatgpt-shell-streaming'
 (defcustom chatgpt-shell-render-latex t
   "Whether or not to render LaTeX blocks (experimental).
 
-Experimental. Please report issues."
+Experimental.  Please report issues."
   :type 'boolean
   :group 'chatgpt-shell)
 
@@ -2592,13 +2592,31 @@ Use QUOTES1-START QUOTES1-END LANG LANG-START LANG-END BODY-START
        (cdr (map-elt inline-code 'body))))
     (when chatgpt-shell-render-latex
       (require 'org)
-      (let ((major-mode 'org-mode)) ;; Silence org-element warnings.
+      ;; Silence org-element warnings.
+      (let ((major-mode 'org-mode))
         (save-excursion
-          (org-format-latex
-           (concat org-preview-latex-image-directory "chatgpt-shell")
-           (point-min) (point-max)
-           temporary-file-directory
-           'overlays nil 'forbuffer org-preview-latex-default-process))))))
+          (dolist (range (chatgpt-shell--invert-ranges
+                          avoid-ranges
+                          (point-min)
+                          (point-max)))
+            (org-format-latex
+             (concat org-preview-latex-image-directory "chatgpt-shell")
+             (car range) (cdr range)
+             temporary-file-directory
+             'overlays nil 'forbuffer org-preview-latex-default-process)))))))
+
+(defun chatgpt-shell--invert-ranges (ranges min max)
+  "Invert a list of RANGES within the interval [MIN, MAX].
+Each range is a cons of start and end integers."
+  (let ((result nil)
+        (start min))
+    (dolist (range ranges)
+      (when (< start (car range))
+        (push (cons start (car range)) result))
+      (setq start (cdr range)))
+    (when (< start max)
+      (push (cons start max) result))
+    result))
 
 ;; TODO: Move to shell-maker.
 (defun chatgpt-shell--unpaired-length (length)
@@ -2739,6 +2757,102 @@ For example \"elisp\" -> \"emacs-lisp\"."
             (chatgpt-shell-execute-babel-block-action-at-point)
           (user-error "No primary action for %s blocks" (map-elt block 'language))))
     (user-error "No block at point")))
+
+(defun chatgpt-shell-edit-block-at-point ()
+  "Execute block at point."
+  (interactive)
+  (error "Not yet supported")
+  (if-let ((block (chatgpt-shell-markdown-block-at-point)))
+      (chatgpt-shell--view-code :language (map-elt block 'language)
+                                :code (buffer-substring-no-properties
+                                       (map-elt block 'start)
+                                       (map-elt block 'end))
+                                :on-finished (lambda (code)
+                                               (when-let ((inhibit-read-only t)
+                                                          (success code))
+                                                 (deactivate-mark)
+                                                 (delete-region (map-elt block 'start)
+                                                                (map-elt block 'end))
+                                                 (insert "\n"
+                                                         (string-trim code)
+                                                         "\n")
+                                                 (chatgpt-shell--put-source-block-overlays))))
+    (user-error "No block at point")))
+
+(defun chatgpt-shell-view-block-at-point ()
+  "View code block at point (using language's major mode)."
+  (interactive)
+  (if-let ((block (chatgpt-shell-markdown-block-at-point)))
+      (chatgpt-shell--view-code :language (map-elt block 'language)
+                                :code (buffer-substring-no-properties
+                                       (map-elt block 'start)
+                                       (map-elt block 'end))
+                                :on-finished #'identity)
+    (user-error "No block at point")))
+
+(cl-defun chatgpt-shell--view-code (&key edit language code on-finished)
+  "Open a temporary buffer for editing CODE in LANGUAGE major mode.
+When done, invoke the FINISHED function with the resulting code.
+
+ARGS:
+- EDIT: To enable editing CODE in own buffer.
+- LANGUAGE: A string with the language name.
+- CODE: A string with the initial content of the buffer.
+- ON-FINISHED: Invoked with saved changes, nil if cancelled."
+  (let* ((block-buffer (current-buffer))
+         (edit-buffer (generate-new-buffer (format "*%s code block*"
+                                                   (if edit "edit" "view"))))
+         (buffer-name (buffer-name edit-buffer))
+         (language-mode (intern (concat (or
+                                         (chatgpt-shell--resolve-internal-language language)
+                                         (downcase (string-trim language)))
+                                        "-mode"))))
+    (switch-to-buffer edit-buffer)
+    (set-visited-file-name (make-temp-file "chatgpt-shell-edit-block"))
+    (rename-buffer buffer-name)
+    (add-hook 'after-change-functions
+              (lambda (_beg _end _len)
+                (set-buffer-modified-p nil)) nil t)
+    (funcall language-mode)
+    (insert (or code ""))
+    (set-buffer-modified-p nil)
+    (if edit
+        (progn
+          (setq header-line-format
+                (concat
+                 " "
+                 (propertize "C-c '" 'face 'help-key-binding)
+                 " to Save. "
+                 (propertize "C-c C-k" 'face 'help-key-binding)
+                 " to Cancel and Discard."))
+          (let ((local-map (make-sparse-keymap)))
+            (define-key local-map (kbd "C-c '") (lambda ()
+                                                  (interactive)
+                                                  (let ((result (buffer-string)))
+                                                    (with-current-buffer block-buffer
+                                                      (funcall on-finished result))
+                                                    (set-buffer-modified-p nil)
+                                                    (kill-buffer edit-buffer))))
+            (define-key local-map (kbd "C-c C-k") (lambda ()
+                                                    (interactive)
+                                                    (with-current-buffer block-buffer
+                                                      (funcall on-finished nil))
+                                                    (set-buffer-modified-p nil)
+                                                    (kill-buffer edit-buffer)))
+            (use-local-map local-map)))
+      (setq header-line-format
+            (concat
+             " Press "
+             (propertize "q" 'face 'help-key-binding)
+             " to exit"))
+      (let ((local-map (make-sparse-keymap)))
+        (define-key local-map (kbd "q") (lambda ()
+                                          (interactive)
+                                          (quit-restore-window
+                                           (get-buffer-window edit-buffer) 'kill)))
+        (use-local-map local-map))
+      (setq buffer-read-only t))
+    (goto-char (point-min))))
 
 (defun chatgpt-shell--override-language-params (language params)
   "Override PARAMS for LANGUAGE if found in `chatgpt-shell-babel-headers'."
