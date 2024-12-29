@@ -99,6 +99,7 @@ If you use OpenRouter through a proxy service, change the URL base."
   (apply #'chatgpt-shell-openai--handle-chatgpt-command
          :key #'chatgpt-shell-openrouter-key
          :filter #'chatgpt-shell-openrouter--filter-output
+         :missing-key-msg "Your chatgpt-shell-openrouter-key is missing"
          args))
 
 (defun chatgpt-shell-openrouter--filter-output (raw-response)
