@@ -4,9 +4,9 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/chatgpt-shell
-;; Version: 2.10.2
+;; Version: 2.10.3
 ;; Package-Requires: ((emacs "28.1") (shell-maker "0.76.2"))
-(defconst chatgpt-shell--version "2.10.2")
+(defconst chatgpt-shell--version "2.10.3")
 
 ;; This package is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -2299,7 +2299,8 @@ Use QUOTES1-START QUOTES1-END LANG LANG-START LANG-END BODY-START
         (props)
         (overlay)
         (propertized-text))
-    (if (fboundp lang-mode)
+    (if (and (fboundp lang-mode)
+             (provided-mode-derived-p lang-mode 'prog-mode))
         (progn
           (setq propertized-text
                 (with-current-buffer

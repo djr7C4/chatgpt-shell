@@ -49,6 +49,7 @@
 (declare-function chatgpt-shell--region "chatgpt-shell")
 (declare-function chatgpt-shell--pretty-smerge-insert "chatgpt-shell")
 (declare-function chatgpt-shell-markdown-block-at-point "chatgpt-shell")
+(declare-function chatgpt-shell-view-block-at-point "chatgpt-shell")
 
 (defvar-local chatgpt-shell-prompt-compose--exit-on-submit nil
   "Whether or not compose buffer should close after submission.
@@ -175,8 +176,8 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
          (region-details)
          (input-text (or content
                      (when-let ((region-active (region-active-p))
-                                (region (buffer-substring (region-beginning)
-                                                          (region-end))))
+                                (region (buffer-substring-no-properties (region-beginning)
+                                                                        (region-end))))
                        (setq region-details (chatgpt-shell--region))
                        (deactivate-mark)
                        (concat (if-let ((buffer-file-name (buffer-file-name))
@@ -214,15 +215,15 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
                                  (top-context-end (max (line-beginning-position -5) (point-min)))
                                  (bottom-context-start (min (line-beginning-position 2) (point-max)))
                                  (bottom-context-end (min (line-beginning-position 7) (point-max)))
-                                 (current-line (buffer-substring line-start line-end)))
+                                 (current-line (buffer-substring-no-properties line-start line-end)))
                        (concat
                         "Fix this code and only show me a diff without explanation\n\n"
                         (mapconcat #'flymake-diagnostic-text diagnostic "\n")
                         "\n\n"
-                        (buffer-substring top-context-start top-context-end)
-                        (buffer-substring line-start line-end)
+                        (buffer-substring-no-properties top-context-start top-context-end)
+                        (buffer-substring-no-properties line-start line-end)
                         " <--- issue is here\n"
-                        (buffer-substring bottom-context-start bottom-context-end)))))
+                        (buffer-substring-no-properties bottom-context-start bottom-context-end)))))
          ;; TODO: Consolidate, but until then keep in sync with
          ;; inlined instructions from `chatgpt-shell-prompt-compose-send-buffer'.
          (instructions (concat "Type "
@@ -236,6 +237,8 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
                            (with-current-buffer (chatgpt-shell-prompt-compose-buffer)
                              chatgpt-shell-prompt-compose-view-mode))))
     (with-current-buffer (chatgpt-shell-prompt-compose-buffer)
+      (unless transient-frame-p
+        (select-window (display-buffer (chatgpt-shell-prompt-compose-buffer))))
       (chatgpt-shell-prompt-compose-mode)
       (setq-local chatgpt-shell-prompt-compose--exit-on-submit exit-on-submit)
       (setq-local chatgpt-shell-prompt-compose--transient-frame-p transient-frame-p)
@@ -245,7 +248,7 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
         (with-current-buffer (chatgpt-shell--primary-buffer)
           (chatgpt-shell-clear-buffer)))
       (when (or erase-buffer
-                (string-empty-p (string-trim (buffer-string))))
+                (string-empty-p (string-trim (chatgpt-shell-prompt-compose--text))))
         (chatgpt-shell-prompt-compose-view-mode -1)
         (chatgpt-shell-prompt-compose--initialize))
       (when input-text
@@ -253,7 +256,8 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
           (goto-char (point-max))
           (insert "\n\n")
           (insert input-text)
-          (chatgpt-shell--put-source-block-overlays)))
+          (let ((inhibit-read-only t))
+            (chatgpt-shell--put-source-block-overlays))))
       ;; TODO: Find a better alternative to prevent clash.
       ;; Disable "n"/"p" for region-bindings-mode-map, so it doesn't
       ;; clash with "n"/"p" selection binding.
@@ -262,8 +266,6 @@ Set TRANSIENT-FRAME-P to also close frame on exit."
                      (lambda () buffer-read-only)))
       (setq chatgpt-shell--ring-index nil)
       (message instructions))
-    (unless transient-frame-p
-      (select-window (display-buffer (chatgpt-shell-prompt-compose-buffer))))
     (chatgpt-shell-prompt-compose-buffer)))
 
 (defun chatgpt-shell-prompt-compose-search-history ()
@@ -378,9 +380,7 @@ Optionally set its PROMPT."
       (chatgpt-shell-execute-block-action-at-point)
       (throw 'exit nil))
     (when (string-empty-p
-           (string-trim
-            (buffer-substring-no-properties
-             (point-min) (point-max))))
+           (string-trim (chatgpt-shell-prompt-compose--text)))
       (chatgpt-shell-prompt-compose--initialize)
       (user-error "Nothing to send"))
     (if chatgpt-shell-prompt-compose-view-mode
@@ -397,7 +397,8 @@ Optionally set its PROMPT."
       (let ((prompt (string-trim
                      (chatgpt-shell-prompt-compose--text))))
         (chatgpt-shell-prompt-compose--initialize prompt)
-        (chatgpt-shell--put-source-block-overlays)
+        (let ((inhibit-read-only t))
+          (chatgpt-shell--put-source-block-overlays))
         (chatgpt-shell-prompt-compose-view-mode +1)
         (setq view-exit-action 'kill-buffer)
         (when (string-equal prompt "clear")
@@ -410,7 +411,8 @@ Optionally set its PROMPT."
           (chatgpt-shell-send-to-buffer prompt nil nil
                                         (lambda (_input _output _success)
                                           (with-current-buffer (chatgpt-shell-prompt-compose-buffer)
-                                            (chatgpt-shell--put-source-block-overlays)))
+                                            (let ((inhibit-read-only t))
+                                              (chatgpt-shell--put-source-block-overlays))))
                                         'inline))
         ;; Point should go to beginning of prompt after submission.
         (goto-char (point-min))
@@ -485,7 +487,10 @@ If BACKWARDS is non-nil, go to previous interaction."
         (unless (get-text-property pos 'ignore text)
           (setq result (concat result (substring text pos next))))
         (setq pos next)))
-    (string-trim result)))
+    (with-temp-buffer
+      (insert (string-trim result))
+      (buffer-substring-no-properties (point-min)
+                                      (point-max)))))
 
 ;; TODO: Delete and use chatgpt-shell-prompt-compose-quit-and-close-frame instead.
 (defun chatgpt-shell-prompt-compose-cancel ()
