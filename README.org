@@ -257,53 +257,56 @@ Streaming is enabled by default. =(setq chatgpt-shell-streaming nil)= to disable
 #+RESULTS:
 | Custom variable                                                  | Description                                                                  |
 |------------------------------------------------------------------+------------------------------------------------------------------------------|
-| chatgpt-shell-google-api-url-base                                | Google API’s base URL.                                                       |
-| chatgpt-shell-deepseek-api-url-base                              | DeepSeek API’s base URL.                                                     |
-| chatgpt-shell-perplexity-key                                     | Perplexity API key as a string or a function that loads and returns it.      |
-| chatgpt-shell-deepseek-key                                       | DeepSeek key as a string or a function that loads and returns it.            |
-| chatgpt-shell-prompt-header-write-git-commit                     | Prompt header of ‘git-commit‘.                                               |
-| chatgpt-shell-highlight-blocks                                   | Whether or not to highlight source blocks.                                   |
-| chatgpt-shell-display-function                                   | Function to display the shell.  Set to ‘display-buffer’ or custom function.  |
-| chatgpt-shell-prompt-header-generate-unit-test                   | Prompt header of ‘generate-unit-test‘.                                       |
-| chatgpt-shell-prompt-header-refactor-code                        | Prompt header of ‘refactor-code‘.                                            |
-| chatgpt-shell-prompt-header-proofread-region                     | Prompt header used by ‘chatgpt-shell-proofread-region‘.                      |
-| chatgpt-shell-welcome-function                                   | Function returning welcome message or nil for no message.                    |
-| chatgpt-shell-perplexity-api-url-base                            | Perplexity API’s base URL.                                                   |
-| chatgpt-shell-prompt-query-response-style                        | Determines the prompt style when invoking from other buffers.                |
-| chatgpt-shell-model-version                                      | The active model version as either a string.                                 |
-| chatgpt-shell-kagi-key                                           | Kagi API key as a string or a function that loads and returns it.            |
-| chatgpt-shell-logging                                            | Logging disabled by default (slows things down).                             |
-| chatgpt-shell-render-latex                                       | Whether or not to render LaTeX blocks (experimental).                        |
-| chatgpt-shell-api-url-base                                       | OpenAI API’s base URL.                                                       |
-| chatgpt-shell-google-key                                         | Google API key as a string or a function that loads and returns it.          |
-| chatgpt-shell-ollama-api-url-base                                | Ollama API’s base URL.                                                       |
-| chatgpt-shell-openrouter-key                                     | OpenRouter key as a string or a function that loads and returns it.          |
-| chatgpt-shell-babel-headers                                      | Additional headers to make babel blocks work.                                |
-| chatgpt-shell--pretty-smerge-mode-hook                           | Hook run after entering or leaving ‘chatgpt-shell--pretty-smerge-mode’.      |
-| chatgpt-shell-source-block-actions                               | Block actions for known languages.                                           |
-| chatgpt-shell-default-prompts                                    | List of default prompts to choose from.                                      |
-| chatgpt-shell-anthropic-key                                      | Anthropic API key as a string or a function that loads and returns it.       |
-| chatgpt-shell-prompt-header-eshell-summarize-last-command-output | Prompt header of ‘eshell-summarize-last-command-output‘.                     |
-| chatgpt-shell-system-prompt                                      | The system prompt ‘chatgpt-shell-system-prompts’ index.                      |
-| chatgpt-shell-transmitted-context-length                         | Controls the amount of context provided to chatGPT.                          |
-| chatgpt-shell-root-path                                          | Root path location to store internal shell files.                            |
-| chatgpt-shell-prompt-header-whats-wrong-with-last-command        | Prompt header of ‘whats-wrong-with-last-command‘.                            |
-| chatgpt-shell-read-string-function                               | Function to read strings from user.                                          |
-| chatgpt-shell-after-command-functions                            | Abnormal hook (i.e. with parameters) invoked after each command.             |
-| chatgpt-shell-system-prompts                                     | List of system prompts to choose from.                                       |
-| chatgpt-shell-openai-key                                         | OpenAI key as a string or a function that loads and returns it.              |
-| chatgpt-shell-proxy                                              | When non-nil, use as a proxy (for example http or socks5).                   |
-| chatgpt-shell-prompt-header-describe-code                        | Prompt header of ‘describe-code‘.                                            |
-| chatgpt-shell-insert-dividers                                    | Whether or not to display a divider between requests and responses.          |
-| chatgpt-shell-models                                             | The list of supported models to swap from.                                   |
-| chatgpt-shell-openrouter-api-url-base                            | OpenRouter API’s base URL.                                                   |
-| chatgpt-shell-language-mapping                                   | Maps external language names to Emacs names.                                 |
 | chatgpt-shell-prompt-compose-view-mode-hook                      | Hook run after entering or leaving ‘chatgpt-shell-prompt-compose-view-mode’. |
-| chatgpt-shell-streaming                                          | Whether or not to stream ChatGPT responses (show chunks as they arrive).     |
-| chatgpt-shell-anthropic-api-url-base                             | Anthropic API’s base URL.                                                    |
+| chatgpt-shell-display-function                                   | Function to display the shell.  Set to ‘display-buffer’ or custom function.  |
+| chatgpt-shell-openrouter-api-url-base                            | OpenRouter API’s base URL.                                                   |
+| chatgpt-shell-model-filter                                       | A function that is applied ‘chatgpt-shell-models’ to determine               |
+| chatgpt-shell-system-prompt                                      | The system prompt ‘chatgpt-shell-system-prompts’ index.                      |
+| chatgpt-shell-default-prompts                                    | List of default prompts to choose from.                                      |
+| chatgpt-shell-read-string-function                               | Function to read strings from user.                                          |
 | chatgpt-shell-model-temperature                                  | What sampling temperature to use, between 0 and 2, or nil.                   |
-| chatgpt-shell-request-timeout                                    | How long to wait for a request to time out in seconds.                       |
+| chatgpt-shell-deepseek-key                                       | DeepSeek key as a string or a function that loads and returns it.            |
+| chatgpt-shell-ignored-model-versions                             | The list of model versions to ignore when swapping the model.                |
+| chatgpt-shell-transmitted-context-length                         | Controls the amount of context provided to chatGPT.                          |
+| chatgpt-shell-system-prompts                                     | List of system prompts to choose from.                                       |
+| chatgpt-shell-proxy                                              | When non-nil, use as a proxy (for example http or socks5).                   |
+| chatgpt-shell-anthropic-api-url-base                             | Anthropic API’s base URL.                                                    |
+| chatgpt-shell-streaming                                          | Whether or not to stream ChatGPT responses (show chunks as they arrive).     |
+| chatgpt-shell-prompt-header-refactor-code                        | Prompt header of ‘refactor-code‘.                                            |
+| chatgpt-shell-prompt-header-whats-wrong-with-last-command        | Prompt header of ‘whats-wrong-with-last-command‘.                            |
+| chatgpt-shell-perplexity-key                                     | Perplexity API key as a string or a function that loads and returns it.      |
+| chatgpt-shell-prompt-header-write-git-commit                     | Prompt header of ‘git-commit‘.                                               |
+| chatgpt-shell--pretty-smerge-mode-hook                           | Hook run after entering or leaving ‘chatgpt-shell--pretty-smerge-mode’.      |
+| chatgpt-shell-google-api-url-base                                | Google API’s base URL.                                                       |
+| chatgpt-shell-logging                                            | Logging disabled by default (slows things down).                             |
+| chatgpt-shell-models                                             | The list of supported models to swap from.                                   |
+| chatgpt-shell-prompt-query-response-style                        | Determines the prompt style when invoking from other buffers.                |
+| chatgpt-shell-root-path                                          | Root path location to store internal shell files.                            |
+| chatgpt-shell-render-latex                                       | Whether or not to render LaTeX blocks (experimental).                        |
+| chatgpt-shell-allowed-model-versions                             | The list of model versions to show when swapping the model. This             |
+| chatgpt-shell-prompt-header-proofread-region                     | Prompt header used by ‘chatgpt-shell-proofread-region‘.                      |
+| chatgpt-shell-model-version                                      | The active model version as either a string.                                 |
+| chatgpt-shell-source-block-actions                               | Block actions for known languages.                                           |
+| chatgpt-shell-deepseek-api-url-base                              | DeepSeek API’s base URL.                                                     |
+| chatgpt-shell-insert-dividers                                    | Whether or not to display a divider between requests and responses.          |
+| chatgpt-shell-ollama-api-url-base                                | Ollama API’s base URL.                                                       |
+| chatgpt-shell-prompt-header-eshell-summarize-last-command-output | Prompt header of ‘eshell-summarize-last-command-output‘.                     |
+| chatgpt-shell-google-key                                         | Google API key as a string or a function that loads and returns it.          |
+| chatgpt-shell-welcome-function                                   | Function returning welcome message or nil for no message.                    |
+| chatgpt-shell-openrouter-key                                     | OpenRouter key as a string or a function that loads and returns it.          |
+| chatgpt-shell-kagi-key                                           | Kagi API key as a string or a function that loads and returns it.            |
+| chatgpt-shell-openai-key                                         | OpenAI key as a string or a function that loads and returns it.              |
+| chatgpt-shell-after-command-functions                            | Abnormal hook (i.e. with parameters) invoked after each command.             |
+| chatgpt-shell-prompt-header-describe-code                        | Prompt header of ‘describe-code‘.                                            |
+| chatgpt-shell-anthropic-key                                      | Anthropic API key as a string or a function that loads and returns it.       |
 | chatgpt-shell-kagi-api-url-base                                  | Kagi API’s base URL.                                                         |
+| chatgpt-shell-api-url-base                                       | OpenAI API’s base URL.                                                       |
+| chatgpt-shell-babel-headers                                      | Additional headers to make babel blocks work.                                |
+| chatgpt-shell-highlight-blocks                                   | Whether or not to highlight source blocks.                                   |
+| chatgpt-shell-language-mapping                                   | Maps external language names to Emacs names.                                 |
+| chatgpt-shell-perplexity-api-url-base                            | Perplexity API’s base URL.                                                   |
+| chatgpt-shell-prompt-header-generate-unit-test                   | Prompt header of ‘generate-unit-test‘.                                       |
+| chatgpt-shell-request-timeout                                    | How long to wait for a request to time out in seconds.                       |
 
 There are more. Browse via =M-x set-variable=
 
