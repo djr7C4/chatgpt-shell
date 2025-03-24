@@ -87,6 +87,13 @@ HANDLER, FILTER and OTHER-PARAMS."
                  (format "Model \"%s\" does not support system prompts. Please unset via \"M-x chatgpt-shell-swap-system-prompt\" by selecting None."
                          (map-elt model :version))))))
         (chatgpt-shell-openai-make-model
+         :version "o1-pro"
+         :token-width 3
+         ;; https://platform.openai.com/docs/models/o1-pro
+         :context-window 200000
+         :path "/v1/responses"
+         :validate-command #'chatgpt-shell-validate-no-system-prompt)
+        (chatgpt-shell-openai-make-model
          :version "o1"
          :token-width 3
          ;; https://platform.openai.com/docs/models/o1
