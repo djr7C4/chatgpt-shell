@@ -149,7 +149,7 @@ If you use ChatGPT through a proxy service, change the URL base."
                  (string :tag "String"))
   :group 'chatgpt-shell)
 
-(cl-defun chatgpt-shell-openai--make-chatgpt-messages (&key model system-prompt prompt prompt-url context)
+(cl-defun chatgpt-shell-openai--make-chatgpt-messages (&key model system-prompt prompt prompt-url context (api 'chat-completion))
   "Create ChatGPT messages using MODEL.
 
 SYSTEM-PROMPT: string.
@@ -158,32 +158,39 @@ PROMPT: string.
 
 PROMPT-URL: string.
 
-CONTEXT: Excludes PROMPT."
+CONTEXT: Excludes PROMPT.
+
+API: Can be either \\='chat-completion or \\='responses depending
+on which API is being used."
   (when prompt-url
     (setq prompt-url (chatgpt-shell--make-chatgpt-url prompt-url)))
-  (vconcat
-   (when system-prompt
-     `(((role . "system")
-        (content . ,system-prompt))))
-   (when context
-     (chatgpt-shell-openai--user-assistant-messages
-      (if model
-          (chatgpt-shell-crop-context
-           :model model
-           :command prompt
-           :context context)
-        context)))
-   (when (or prompt
-             prompt-url)
-     `(((role . "user")
-        (content . ,(vconcat
-                     (append
-                      (when prompt
-                        `(((type . "text")
-                           (text . ,prompt))))
-                      (when prompt-url
-                        `(((type . "image_url")
-                           (image_url . ,prompt-url))))))))))))
+  (cl-destructuring-bind (system-role text-type image-type)
+      (cl-ecase api
+        (chat-completion '("system" "text" "image_url"))
+        (responses '("developer" "input_text" "input_image")))
+    (vconcat
+     (when system-prompt
+       `(((role . ,system-role)
+          (content . ,system-prompt))))
+     (when context
+       (chatgpt-shell-openai--user-assistant-messages
+        (if model
+            (chatgpt-shell-crop-context
+             :model model
+             :command prompt
+             :context context)
+          context)))
+     (when (or prompt
+               prompt-url)
+       `(((role . "user")
+          (content . ,(vconcat
+                       (append
+                        (when prompt
+                          `(((type . ,text-type)
+                             (text . ,prompt)))))
+                       (when prompt-url
+                         `(((type . image-type)
+                            (image_url . ,prompt-url))))))))))))
 
 (defun chatgpt-shell-openai-key ()
   "Get the ChatGPT key."
