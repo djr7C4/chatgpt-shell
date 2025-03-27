@@ -223,7 +223,7 @@ This gets set once for each MODEL, based on a heuristic."
   ;; https://ai.google.dev/gemini-api/docs/models/gemini.
   (list (chatgpt-shell-google-make-model :version "gemini-2.5-pro-exp"
                                          :short-version "2.5-pro-exp"
-                                         :path "/v1beta/models/gemini-2.5-pro-exp"
+                                         :path "/v1beta/models/gemini-2.5-pro-exp-03-25"
                                          :token-width 4
                                          :context-window 1000000)
         (chatgpt-shell-google-make-model :version "gemini-2.0-pro-exp"
