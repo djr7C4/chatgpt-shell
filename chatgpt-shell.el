@@ -4,9 +4,9 @@
 
 ;; Author: Alvaro Ramirez https://xenodium.com
 ;; URL: https://github.com/xenodium/chatgpt-shell
-;; Version: 2.16.4
+;; Version: 2.17.1
 ;; Package-Requires: ((emacs "28.1") (shell-maker "0.76.3"))
-(defconst chatgpt-shell--version "2.16.4")
+(defconst chatgpt-shell--version "2.17.1")
 
 ;; This package is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -3569,8 +3569,8 @@ NEW-LABEL (optional): To display for new text."
 
 (defun chatgpt-shell--fader-palette ()
   "Generate a gradient palette from the `region' face to the `default' face."
-  (let* ((start-color (face-background 'region))
-         (end-color (face-background 'default))
+  (let* ((start-color (or (face-background 'region) "#808080"))
+         (end-color (or (face-background 'default) "#1a1a1a"))
          (start-rgb (color-name-to-rgb start-color))
          (end-rgb (color-name-to-rgb end-color))
          (steps 50))
