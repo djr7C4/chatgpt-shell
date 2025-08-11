@@ -31,6 +31,7 @@
 (require 'map)
 
 (defvar chatgpt-shell-proxy)
+(declare-function chatgpt-shell-unsorted-collection "chatgpt-shell")
 (declare-function chatgpt-shell-previous-source-block "chatgpt-shell")
 
 (defcustom chatgpt-shell-anthropic-key nil
@@ -62,6 +63,7 @@ nil means to use the maximum number of thinking tokens allowed."
   :group 'chatgpt-shell)
 
 (defun chatgpt-shell-anthropic-reasoning-effort-selector (model)
+  "Select the reasoning effort for the Anthropic MODEL."
   (let* ((min (map-elt model :thinking-budget-min))
          (max (1- (map-elt model :max-tokens)))
          (response (completing-read (format "Thinking budget tokens (%d-%d): " min max)
@@ -93,8 +95,9 @@ nil means to use the maximum number of thinking tokens allowed."
                                                     reasoning-effort-selector)
   "Create an Anthropic model.
 
-Set VERSION, SHORT-VERSION, TOKEN-WIDTH, MAX-TOKENS, CONTEXT-WINDOW and
-VALIDATE-COMMAND handler."
+Set VERSION, SHORT-VERSION, TOKEN-WIDTH, MAX-TOKENS,
+CONTEXT-WINDOW, THINKING-BUDGET-MIN and
+REASONING-EFFORT-SELECTOR."
   (unless version
     (error "Missing mandatory :version param"))
   (unless token-width
@@ -167,6 +170,8 @@ VALIDATE-COMMAND handler."
    (chatgpt-shell-anthropic--make-model :version "claude-3-7-sonnet-latest"
                                         :short-version "3.7-sonnet"
                                         :token-width  4
+                                        :thinking-budget-min 1024
+                                        :reasoning-effort-selector #'chatgpt-shell-anthropic-reasoning-effort-selector
                                         :max-tokens 64000
                                         :context-window 200000)
    (chatgpt-shell-anthropic--make-model :version "claude-3-5-sonnet-latest"
@@ -241,7 +246,7 @@ or
      (when chatgpt-shell-anthropic-thinking
        (when (and chatgpt-shell-anthropic-thinking-budget-tokens
                   (>= chatgpt-shell-anthropic-thinking-budget-tokens (map-elt model :max-tokens)))
-         (error "chatgpt-shell-anthropic-thinking-budget-tokens must be smaller than %d"
+         (error "Error: chatgpt-shell-anthropic-thinking-budget-tokens must be smaller than %d"
                 (map-elt model :max-tokens)))
        (let ((chatgpt-shell-anthropic-thinking-budget-tokens
               (if chatgpt-shell-anthropic-thinking-budget-tokens
