@@ -771,25 +771,6 @@ See `shell-maker-welcome-message' as an example."
 
 (defalias 'chatgpt-shell-explain-code #'chatgpt-shell-describe-code)
 
-
-(defvar-keymap chatgpt-shell-mode-map
-  :parent comint-mode-map
-  :doc "Keymap for `chatgpt-shell-mode'."
-  "C-M-h" #'chatgpt-shell-mark-at-point-dwim
-  "C-c C-c" #'chatgpt-shell-ctrl-c-ctrl-c
-  "C-c C-v" #'chatgpt-shell-swap-model
-  "C-c C-s" #'chatgpt-shell-swap-system-prompt
-  "C-c C-p" #'chatgpt-shell-previous-item
-  "<backtab>" #'chatgpt-shell-previous-item
-  "C-c C-n" #'chatgpt-shell-next-item
-  "<tab>" #'chatgpt-shell-next-item
-  "C-c C-e" #'chatgpt-shell-prompt-compose
-  "C-c C-t" #'chatgpt-shell-transient)
-
-(define-derived-mode chatgpt-shell-mode comint-mode "ChatGPT Shell Input"
-  "Major mode for the ChatGPT shell input buffer."
-  (use-local-map chatgpt-shell-mode-map))
-
 (defvar-keymap chatgpt-shell-mode-map
   :parent shell-maker-mode-map
   :doc "Keymap for `chatgpt-shell-mode'."
