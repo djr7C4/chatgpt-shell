@@ -34,7 +34,7 @@
 (require 'json)
 
 (defvar chatgpt-shell-proxy)
-(declare-function chatgpt-shell-unsorted-collection "chatgpt-shell")
+(declare-function chatgpt-shell--unsorted-collection "chatgpt-shell")
 
 (defcustom chatgpt-shell-google-key nil
   "Google API key as a string or a function that loads and returns it."
@@ -68,7 +68,7 @@ https://ai.google.dev/gemini-api/docs/thinking."
   (let* ((min (map-elt model :thinking-budget-min))
          (max (map-elt model :thinking-budget-max))
          (response (completing-read (format "Thinking budget tokens (%d-%d): " min max)
-                                    (chatgpt-shell-unsorted-collection
+                                    (chatgpt-shell--unsorted-collection
                                      (append (and (= min 0) (list "disable"))
                                              (list "dynamic" "max")))))
          (budget (cond
@@ -83,7 +83,7 @@ https://ai.google.dev/gemini-api/docs/thinking."
     (unless (or (memq budget '(dynamic nil))
                 (and (integerp budget) (<= min budget max)))
       (user-error "Thinking budget tokens must be in the range %d-%d" min max))
-    `((chatgpt-shell-google-thinking-budget-tokens . ,budget))))
+    `((chatgpt-shell-google-thinking-budget-tokens ,budget :kind thinking-budget :max ,(null budget)))))
 
 ;; https://ai.google.dev/gemini-api/docs/tokens
 ;; A token is equivalent to _about_ 4 characters.

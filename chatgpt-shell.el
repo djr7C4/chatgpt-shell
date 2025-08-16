@@ -608,8 +608,11 @@ non-nil; otherwise `completing-read'."
         (setq-default chatgpt-shell-model-version selection))
     (error "No other providers found")))
 
-(defun chatgpt-shell-unsorted-collection (collection)
-  "Return a completion table based on COLLECTION that inhibits sorting."
+(defun chatgpt-shell--unsorted-collection (collection)
+  "Return a completion table from COLLECTION that inhibits sorting.
+
+See `completing-read' for the types that are supported for
+COLLECTION."
   (lambda (string predicate action)
     (if (eq action 'metadata)
         (let ((current-metadata (cdr (completion-metadata (minibuffer-contents)
@@ -634,26 +637,43 @@ argument), it is set globally."
          (selector (map-elt model :reasoning-effort-selector)))
     (unless selector
       (user-error "No reasoning effort selector is defined for %s" (chatgpt-shell-model-version)))
-    (let* ((first t)
-           (buf (cond
+    (let* ((buf (cond
                  (global
                   nil)
                  ((eq major-mode 'chatgpt-shell-mode)
                   (current-buffer))
                  ((memq major-mode '(chatgpt-shell-prompt-compose-mode chatgpt-shell-prompt-compose-view-mode))
                   (chatgpt-shell--primary-buffer))))
-           (result (with-current-buffer buf (funcall selector model))))
-      (dolist (cell result)
-        (let* ((sym (car cell))
-               (var (if buf
-                        (with-current-buffer buf
-                          (make-local-variable sym))
-                      sym))
-               (val (cdr cell)))
-          (set var val)
-          (when first
-            (message "Set %s to %s%s" var (if val val "max") (if buf " locally" " globally"))
-            (setq first nil)))))))
+           ;; The call to the selector returns a list of bindings. Some models
+           ;; (e.g. those by Anthropic) have multiple variables that control
+           ;; reasoning so in some cases it is necessary to set more than one.
+           ;; An example return value is
+           ;;
+           ;; ((chatgpt-shell-anthropic-thinking-budget-tokens 3000 :kind thinking-budget)
+           ;;  (chatgpt-shell-anthropic-thinking t :kind thinking-toggle))
+           (bindings (if buf
+                         (with-current-buffer buf
+                           (funcall selector model))
+                       (funcall selector model))))
+      (dolist (binding bindings)
+        (cl-destructuring-bind (var val &key kind max)
+            binding
+          (unless (memq kind '(thinking-budget thinking-toggle))
+            (error "Unknown kind %S returned by reasoning effort selector" kind))
+          (if buf
+            ;; Ensure that the variable is set buffer-locally.
+            (with-current-buffer buf
+              (set (make-local-variable var) val))
+            ;; Set the global value even if it has already been bound
+            ;; buffer-locally. Note that using `set' on var will set the
+            ;; buffer-local value if one already exists.
+            (set-default var val))
+          ;; Let the user know what the thinking budget was set to.
+          (when (eq kind 'thinking-budget)
+            (message "Set %s to %s%s"
+                     var
+                     (if max "max" val)
+                     (if buf " locally" " globally"))))))))
 
 (defcustom chatgpt-shell-streaming t
   "Whether or not to stream ChatGPT responses (show chunks as they arrive)."
